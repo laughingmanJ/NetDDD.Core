@@ -8,18 +8,21 @@ namespace NetDDD.Core.Dispatcher
 {
     public class DomainEventDispatcher : IDomainEventDispatcher
     {
-        private IDictionary<string, IDomainEventHandler> _handlers = new Dictionary<string, IDomainEventHandler>();
+        private readonly IEventHandlerProvider _provider;
 
-        public async Task Raise<T>(T @event)
-            where T : IDomainEvent
+        public DomainEventDispatcher(IEventHandlerProvider provider)
         {
-            if (@event == null)
+            if(provider == null)
             {
-                throw new ArgumentNullException("@event", "Domain event cannot be null.");
+                throw new ArgumentNullException("provider");
             }
 
-            var handlers = _handlers
-                .OfType<IDomainEventHandler<T>>();
+            _provider = provider;
+        }
+
+        public async Task Raise(IDomainEvent @event)
+        {
+            var handlers = _provider.GetHandlers(@event.GetType());
 
             foreach (var handler in handlers)
             {
@@ -27,51 +30,11 @@ namespace NetDDD.Core.Dispatcher
             }
         }
 
-        public void Register(IDomainEventHandler handler)
+        public async Task Raise(IEnumerable<IDomainEvent> events)
         {
-            ValidateHandler(handler);
-
-            if(_handlers.ContainsKey(handler.Name))
+            foreach (var @event in events)
             {
-                throw new ArgumentException("Handler is already registered and cannot be registered again.", "handler");
-            }
-
-            _handlers.Add(handler.Name, handler);
-        }
-
-        public void Unregister(IDomainEventHandler handler)
-        {
-            ValidateHandler(handler);
-
-            if(!_handlers.ContainsKey(handler.Name))
-            {
-                throw new ArgumentException("Unable to remove handler because it is not registered.", "handler");
-            }
-
-            _handlers.Remove(handler.Name);
-        }
-
-        public bool IsRegistered(string handlerName)
-        {
-            return _handlers.ContainsKey(handlerName);
-        }
-
-        public bool IsRegistered(IDomainEventHandler handler)
-        {
-            ValidateHandler(handler);
-            return IsRegistered(handler.Name);
-        }
-
-        private void ValidateHandler(IDomainEventHandler handler)
-        {
-            if (handler == null)
-            {
-                throw new ArgumentNullException("handler", "Handler cannot be null.");
-            }
-
-            if (string.IsNullOrEmpty(handler.Name))
-            {
-                throw new NullReferenceException("Handler name cannot be null or empty.");
+                await Raise(@event);
             }
         }
     }

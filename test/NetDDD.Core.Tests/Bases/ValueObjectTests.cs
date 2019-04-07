@@ -6,6 +6,9 @@ namespace NetDDD.Core.Tests.Bases
 {
     public class ValueObjectTests
     {
+        /// <summary>
+        /// 
+        /// </summary>
         [Fact]
         public void Is_Equal()
         {
@@ -22,6 +25,9 @@ namespace NetDDD.Core.Tests.Bases
             Assert.False(address1 != address2);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [Fact]
         public void Is_Not_Equal()
         {
